@@ -500,7 +500,7 @@ func (md *MDServerDisk) TruncateLock(ctx context.Context, id tlf.ID) (
 		return false, err
 	}
 
-	return md.truncateLockManager.truncateLock(session.CryptPublicKey.KID(), id)
+	return md.truncateLockManager.truncateLock(session.CryptPublicKey, id)
 }
 
 // TruncateUnlock implements the MDServer interface for MDServerDisk.
@@ -522,7 +522,7 @@ func (md *MDServerDisk) TruncateUnlock(ctx context.Context, id tlf.ID) (
 		return false, err
 	}
 
-	return md.truncateLockManager.truncateUnlock(session.CryptPublicKey.KID(), id)
+	return md.truncateLockManager.truncateUnlock(session.CryptPublicKey, id)
 }
 
 // Shutdown implements the MDServer interface for MDServerDisk.
