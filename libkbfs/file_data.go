@@ -641,10 +641,11 @@ func (fd *fileData) createIndirectBlock(
 			{
 				BlockInfo: BlockInfo{
 					BlockPointer: BlockPointer{
-						ID:         newID,
-						KeyGen:     fd.kmd.LatestKeyGeneration(),
-						DataVer:    dver,
-						Context:    kbfsblock.MakeFirstContext(fd.uid),
+						ID:      newID,
+						KeyGen:  fd.kmd.LatestKeyGeneration(),
+						DataVer: dver,
+						Context: kbfsblock.MakeFirstContext(
+							fd.uid, fd.rootBlockPointer().GetBlockType()),
 						DirectType: IndirectBlock,
 					},
 					EncodedSize: 0,
@@ -739,10 +740,11 @@ func (fd *fileData) newRightBlock(
 		}
 
 		newPtr := BlockPointer{
-			ID:         newRID,
-			KeyGen:     fd.kmd.LatestKeyGeneration(),
-			DataVer:    dver,
-			Context:    kbfsblock.MakeFirstContext(fd.uid),
+			ID:      newRID,
+			KeyGen:  fd.kmd.LatestKeyGeneration(),
+			DataVer: dver,
+			Context: kbfsblock.MakeFirstContext(
+				fd.uid, fd.rootBlockPointer().GetBlockType()),
 			DirectType: IndirectBlock,
 		}
 
@@ -1566,7 +1568,8 @@ func (fd *fileData) readyHelper(ctx context.Context, id tlf.ID,
 			}
 
 			newInfo, _, readyBlockData, err := ReadyBlock(
-				ctx, bcache, bops, fd.crypto, fd.kmd, pb.pblock, fd.uid)
+				ctx, bcache, bops, fd.crypto, fd.kmd, pb.pblock, fd.uid,
+				fd.rootBlockPointer().GetBlockType())
 			if err != nil {
 				return nil, err
 			}
@@ -1831,10 +1834,11 @@ func (fd *fileData) deepCopy(ctx context.Context, dataVer DataVer) (
 					// when readied, since the child block pointers
 					// will have changed.
 					newPtr := BlockPointer{
-						ID:         newID,
-						KeyGen:     fd.kmd.LatestKeyGeneration(),
-						DataVer:    dataVer,
-						Context:    kbfsblock.MakeFirstContext(fd.uid),
+						ID:      newID,
+						KeyGen:  fd.kmd.LatestKeyGeneration(),
+						DataVer: dataVer,
+						Context: kbfsblock.MakeFirstContext(
+							fd.uid, fd.rootBlockPointer().GetBlockType()),
 						DirectType: IndirectBlock,
 					}
 					pblock.IPtrs[i].BlockPointer = newPtr
@@ -1864,8 +1868,9 @@ func (fd *fileData) deepCopy(ctx context.Context, dataVer DataVer) (
 		KeyGen:  fd.kmd.LatestKeyGeneration(),
 		DataVer: dataVer,
 		Context: kbfsblock.Context{
-			Creator:  fd.uid,
-			RefNonce: kbfsblock.ZeroRefNonce,
+			Creator:   fd.uid,
+			RefNonce:  kbfsblock.ZeroRefNonce,
+			BlockType: fd.rootBlockPointer().GetBlockType(),
 		},
 		DirectType: IndirectBlock,
 	}

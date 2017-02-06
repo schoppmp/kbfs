@@ -1160,7 +1160,8 @@ func ResetRootBlock(ctx context.Context, config Config,
 	newDblock := NewDirBlock()
 	info, plainSize, readyBlockData, err :=
 		ReadyBlock(ctx, config.BlockCache(), config.BlockOps(),
-			config.Crypto(), rmd.ReadOnly(), newDblock, currentUID)
+			config.Crypto(), rmd.ReadOnly(), newDblock, currentUID,
+			keybase1.BlockType_DATA)
 	if err != nil {
 		return nil, BlockInfo{}, ReadyBlockData{}, err
 	}
@@ -1771,7 +1772,7 @@ func (fbo *folderBranchOps) readyBlockMultiple(ctx context.Context,
 	bps *blockPutState) (info BlockInfo, plainSize int, err error) {
 	info, plainSize, readyBlockData, err :=
 		ReadyBlock(ctx, fbo.config.BlockCache(), fbo.config.BlockOps(),
-			fbo.config.Crypto(), kmd, currBlock, uid)
+			fbo.config.Crypto(), kmd, currBlock, uid, keybase1.BlockType_DATA)
 	if err != nil {
 		return
 	}
@@ -1801,8 +1802,9 @@ func (fbo *folderBranchOps) unembedBlockChanges(
 		DataVer:    fbo.config.DataVersion(),
 		DirectType: DirectBlock,
 		Context: kbfsblock.Context{
-			Creator:  uid,
-			RefNonce: kbfsblock.ZeroRefNonce,
+			Creator:   uid,
+			RefNonce:  kbfsblock.ZeroRefNonce,
+			BlockType: keybase1.BlockType_MD,
 		},
 	}
 	file := path{fbo.folderBranch,
