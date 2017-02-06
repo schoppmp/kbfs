@@ -1769,10 +1769,11 @@ func (bps *blockPutState) DeepCopy() *blockPutState {
 
 func (fbo *folderBranchOps) readyBlockMultiple(ctx context.Context,
 	kmd KeyMetadata, currBlock Block, uid keybase1.UID,
-	bps *blockPutState) (info BlockInfo, plainSize int, err error) {
+	bps *blockPutState, bType keybase1.BlockType) (
+	info BlockInfo, plainSize int, err error) {
 	info, plainSize, readyBlockData, err :=
 		ReadyBlock(ctx, fbo.config.BlockCache(), fbo.config.BlockOps(),
-			fbo.config.Crypto(), kmd, currBlock, uid, keybase1.BlockType_DATA)
+			fbo.config.Crypto(), kmd, currBlock, uid, bType)
 	if err != nil {
 		return
 	}
@@ -1862,20 +1863,20 @@ func (fbo *folderBranchOps) unembedBlockChanges(
 		return err
 	}
 	for info := range infos {
-		md.AddRefBytes(uint64(info.EncodedSize))
-		md.AddDiskUsage(uint64(info.EncodedSize))
+		md.AddMDRefBytes(uint64(info.EncodedSize))
+		md.AddMDDiskUsage(uint64(info.EncodedSize))
 	}
 	fbo.log.CDebugf(ctx, "%d unembedded child blocks", len(infos))
 
 	// Ready the top block.
 	info, _, err := fbo.readyBlockMultiple(
-		ctx, md.ReadOnly(), block, uid, bps)
+		ctx, md.ReadOnly(), block, uid, bps, keybase1.BlockType_MD)
 	if err != nil {
 		return err
 	}
 
-	md.AddRefBytes(uint64(info.EncodedSize))
-	md.AddDiskUsage(uint64(info.EncodedSize))
+	md.AddMDRefBytes(uint64(info.EncodedSize))
+	md.AddMDDiskUsage(uint64(info.EncodedSize))
 	md.data.cachedChanges = *changes
 	changes.Info = info
 	changes.Ops = nil
@@ -1924,7 +1925,7 @@ func (fbo *folderBranchOps) syncBlock(
 	now := fbo.nowUnixNano()
 	for len(newPath.path) < len(dir.path)+1 {
 		info, plainSize, err := fbo.readyBlockMultiple(
-			ctx, md.ReadOnly(), currBlock, uid, bps)
+			ctx, md.ReadOnly(), currBlock, uid, bps, keybase1.BlockType_DATA)
 		if err != nil {
 			return path{}, DirEntry{}, nil, err
 		}
