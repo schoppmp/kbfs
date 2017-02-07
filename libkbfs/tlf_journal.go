@@ -1491,8 +1491,9 @@ func (j *tlfJournal) putBlockData(
 		return err
 	}
 
+	var putFiles int64
 	defer func() {
-		if err != nil {
+		if err != nil || putFiles == 0 {
 			j.diskLimiter.onBlockPutFail(bufLen)
 		}
 	}()
@@ -1505,19 +1506,23 @@ func (j *tlfJournal) putBlockData(
 
 	storedBytesBefore := j.blockJournal.getStoredBytes()
 
-	_, err = j.blockJournal.putData(ctx, id, blockCtx, buf, serverHalf)
+	putFiles, err = j.blockJournal.putData(ctx, id, blockCtx, buf, serverHalf)
 	if err != nil {
 		return err
 	}
 
 	storedBytesAfter := j.blockJournal.getStoredBytes()
 
-	// Either the stored bytes increased by `bufLen`, or stayed the
-	// same because the already existed.
-	if storedBytesAfter != (storedBytesBefore+bufLen) &&
-		storedBytesBefore != storedBytesAfter {
+	// If putFiles > 0, the stored bytes must have increased by
+	// `bufLen`; otherwise, the stored bytes must have stayed the
+	// same.
+	if putFiles > 0 && storedBytesAfter != (storedBytesBefore+bufLen) {
 		panic(fmt.Sprintf(
-			"storedBytes changed from %d to %d, but bufLen is %d",
+			"putFiles=%d > 0 and storedBytes changed from %d to %d, but bufLen=%d",
+			putFiles, storedBytesBefore, storedBytesAfter, bufLen))
+	} else if putFiles == 0 && storedBytesAfter != storedBytesBefore {
+		panic(fmt.Sprintf(
+			"putFiles=0 and storedBytes unexpectedly changed from %d to %d (with bufLen=%d)",
 			storedBytesBefore, storedBytesAfter, bufLen))
 	}
 
