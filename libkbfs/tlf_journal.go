@@ -1477,6 +1477,9 @@ func (j *tlfJournal) putBlockData(
 	acquireCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
+	// TODO: We'll have to guess the value of putFiles to pass
+	// into beforeBlockPut.
+
 	bufLen := int64(len(buf))
 	availableBytes, err := j.diskLimiter.beforeBlockPut(
 		acquireCtx, bufLen, j.log)
