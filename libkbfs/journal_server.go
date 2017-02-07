@@ -64,12 +64,12 @@ type diskLimiter interface {
 	// with that journal's current disk usage. journalSize must be
 	// >= 0. If the argument is non-zero, the updated available
 	// byte count must be returned.
-	onJournalEnable(journalSize int64) int64
+	onJournalEnable(journalBytes, journalFiles int64) int64
 
 	// onJournalDisable is called when shutting down a TLF journal
 	// with that journal's current disk usage. journalSize must be
 	// >= 0.
-	onJournalDisable(journalSize int64)
+	onJournalDisable(journalBytes, journalFiles int64)
 
 	// beforeBlockPut is called before putting a block of the
 	// given size, which must be > 0. It may block, but must
@@ -77,18 +77,18 @@ type diskLimiter interface {
 	// ctx is cancelled. If the returned error is nil, the updated
 	// available byte count must be returned. Otherwise, the
 	// non-updated available byte count, or zero, may be returned.
-	beforeBlockPut(ctx context.Context, blockBytes int64,
+	beforeBlockPut(ctx context.Context, blockBytes, blockFiles int64,
 		log logger.Logger) (int64, error)
 
 	// onBlockPutFail is called if putting a block of the given
 	// size (which must be > 0) fails.
-	onBlockPutFail(blockBytes int64)
+	onBlockPutFail(blockBytes, blockFiles int64)
 
 	// onBlockDelete is called after deleting a block of the given
 	// number of bytes of disk space, which must be >=
 	// 0. (Deleting a zero-sized block shouldn't happen, but may
 	// as well let it go through.)
-	onBlockDelete(blockBytes int64)
+	onBlockDelete(blockBytes, blockFiles int64)
 }
 
 // TODO: JournalServer isn't really a server, although it can create

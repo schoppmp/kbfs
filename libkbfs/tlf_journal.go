@@ -363,7 +363,9 @@ func makeTLFJournal(
 
 	// Do this only once we're sure we won't error.
 	storedBytes := j.blockJournal.getStoredBytes()
-	availableBytes := j.diskLimiter.onJournalEnable(storedBytes)
+	storedFiles := j.blockJournal.getStoredFiles()
+	availableBytes := j.diskLimiter.onJournalEnable(
+		storedBytes, storedFiles)
 
 	go j.doBackgroundWorkLoop(bws, backoff.NewExponentialBackOff())
 
@@ -976,8 +978,7 @@ func (j *tlfJournal) doOnMDFlush(ctx context.Context,
 		if err != nil {
 			return err
 		}
-		_ = removedFiles
-		j.diskLimiter.onBlockDelete(removedBytes)
+		j.diskLimiter.onBlockDelete(removedBytes, removedFiles)
 		if nextLastToRemove == 0 {
 			break
 		}
@@ -1368,7 +1369,8 @@ func (j *tlfJournal) shutdown() {
 	// time other than during shutdown, we should still count
 	// shut-down journals against the disk limit.
 	storedBytes := j.blockJournal.getStoredBytes()
-	j.diskLimiter.onJournalDisable(storedBytes)
+	storedFiles := j.blockJournal.getStoredFiles()
+	j.diskLimiter.onJournalDisable(storedBytes, storedFiles)
 
 	// Make further accesses error out.
 	j.blockJournal = nil
@@ -1486,7 +1488,7 @@ func (j *tlfJournal) putBlockData(
 
 	bufLen := int64(len(buf))
 	availableBytes, err := j.diskLimiter.beforeBlockPut(
-		acquireCtx, bufLen, j.log)
+		acquireCtx, bufLen, filesPerBlockMax, j.log)
 	switch errors.Cause(err) {
 	case nil:
 		// Continue.
@@ -1502,7 +1504,7 @@ func (j *tlfJournal) putBlockData(
 	defer func() {
 		// TODO: Add unit test for this case.
 		if err != nil || putFiles == 0 {
-			j.diskLimiter.onBlockPutFail(bufLen)
+			j.diskLimiter.onBlockPutFail(bufLen, filesPerBlockMax)
 		}
 	}()
 
