@@ -1493,6 +1493,7 @@ func (j *tlfJournal) putBlockData(
 
 	var putFiles int64
 	defer func() {
+		// TODO: Add unit test for this case.
 		if err != nil || putFiles == 0 {
 			j.diskLimiter.onBlockPutFail(bufLen)
 		}
