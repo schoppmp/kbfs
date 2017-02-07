@@ -1505,7 +1505,7 @@ func (j *tlfJournal) putBlockData(
 
 	storedBytesBefore := j.blockJournal.getStoredBytes()
 
-	err = j.blockJournal.putData(ctx, id, blockCtx, buf, serverHalf)
+	_, err = j.blockJournal.putData(ctx, id, blockCtx, buf, serverHalf)
 	if err != nil {
 		return err
 	}

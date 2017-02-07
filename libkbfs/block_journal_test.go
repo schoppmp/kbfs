@@ -126,8 +126,9 @@ func putBlockData(
 	serverHalf, err := kbfscrypto.MakeRandomBlockCryptKeyServerHalf()
 	require.NoError(t, err)
 
-	err = j.putData(ctx, bID, bCtx, data, serverHalf)
+	putFiles, err := j.putData(ctx, bID, bCtx, data, serverHalf)
 	require.NoError(t, err)
+	require.Equal(t, int64(filesPerBlockMax), putFiles)
 
 	require.Equal(t, oldLength+1, getBlockJournalLength(t, j))
 
@@ -207,16 +208,18 @@ func TestBlockJournalDuplicatePut(t *testing.T) {
 	serverHalf, err := kbfscrypto.MakeRandomBlockCryptKeyServerHalf()
 	require.NoError(t, err)
 
-	err = j.putData(ctx, bID, bCtx, data, serverHalf)
+	putFiles, err := j.putData(ctx, bID, bCtx, data, serverHalf)
 	require.NoError(t, err)
+	require.Equal(t, int64(filesPerBlockMax), putFiles)
 
 	require.Equal(t, int64(len(data)), j.getStoredBytes())
 	require.Equal(t, int64(len(data)), j.getUnflushedBytes())
 	require.Equal(t, int64(filesPerBlockMax), j.getStoredFiles())
 
 	// Put a second time.
-	err = j.putData(ctx, bID, bCtx, data, serverHalf)
+	putFiles, err = j.putData(ctx, bID, bCtx, data, serverHalf)
 	require.NoError(t, err)
+	require.Equal(t, int64(0), putFiles)
 
 	require.Equal(t, oldLength+2, getBlockJournalLength(t, j))
 

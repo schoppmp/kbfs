@@ -371,7 +371,8 @@ func (j *blockJournal) getStoredFiles() int64 {
 
 func (j *blockJournal) putData(
 	ctx context.Context, id kbfsblock.ID, context kbfsblock.Context, buf []byte,
-	serverHalf kbfscrypto.BlockCryptKeyServerHalf) (err error) {
+	serverHalf kbfscrypto.BlockCryptKeyServerHalf) (
+	putFiles int64, err error) {
 	j.log.CDebugf(ctx, "Putting %d bytes of data for block %s with context %v",
 		len(buf), id, context)
 	defer func() {
@@ -384,18 +385,19 @@ func (j *blockJournal) putData(
 
 	next, err := j.end()
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	putData, err := j.s.put(id, context, buf, serverHalf, next.String())
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	if putData {
-		err = j.accumulateBlock(int64(len(buf)), filesPerBlockMax)
+		putFiles = filesPerBlockMax
+		err = j.accumulateBlock(int64(len(buf)), putFiles)
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
 
@@ -404,10 +406,10 @@ func (j *blockJournal) putData(
 		Contexts: kbfsblock.ContextMap{id: {context}},
 	})
 	if err != nil {
-		return err
+		return 0, err
 	}
 
-	return nil
+	return putFiles, nil
 }
 
 func (j *blockJournal) addReference(
