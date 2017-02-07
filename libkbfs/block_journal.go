@@ -365,6 +365,10 @@ func (j *blockJournal) getUnflushedBytes() int64 {
 	return j.aggregateInfo.UnflushedBytes
 }
 
+func (j *blockJournal) getStoredFiles() int64 {
+	return j.aggregateInfo.StoredFiles
+}
+
 func (j *blockJournal) putData(
 	ctx context.Context, id kbfsblock.ID, context kbfsblock.Context, buf []byte,
 	serverHalf kbfscrypto.BlockCryptKeyServerHalf) (err error) {
